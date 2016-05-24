@@ -1,0 +1,12 @@
+{
+    "debugMode"     : 1,
+    "frameRate"     : 60,
+    "noCache"       : true,
+    "id"            : "gameCanvas",
+    "renderMode"    : 1,
+    "jsList"        : [
+        "resource.js",
+        "src/StartScene.js",
+        "src/MainScene.js"
+    ]
+}
