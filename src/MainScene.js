@@ -1,6 +1,7 @@
 var LAYER_TAG_MAIN = 1001;
-var LAYER_TAG_CARD = 1002;
-var LAYER_TAG_RANDOM = 1003;
+var LAYER_TAG_GET_CARD = 1002;
+var LAYER_TAG_USE_CARD = 1003;
+var LAYER_TAG_RANDOM = 1004;
 
 var MainLayer = cc.Layer.extend({
 
@@ -115,7 +116,7 @@ var MainLayer = cc.Layer.extend({
 
     onPlayerUserCard: function(playerid) {
         cc.log('Player: ' + playerid + ' UserCard');
-        layer = this.parent.getChildByTag(LAYER_TAG_CARD);
+        layer = this.parent.getChildByTag(LAYER_TAG_USE_CARD);
         layer.popup();
     },
     onPlayerRandom: function(playerid) {
@@ -183,16 +184,105 @@ var ModalLayer = cc.Layer.extend({
     }  
 });
 
-var CardLayer = ModalLayer.extend({
+var GetCardLayer = ModalLayer.extend({
     ctor: function(playerid) {
         this._super();
         this.playerid = playerid;
 
-        this.timer = new cc.Timer(this, function(){
-            this.doRamdom();
-        }, 0.1, 5);
+        var size = cc.winSize;
+        var cardSprite = new cc.Sprite(res.CardGet_png);
+        cardSprite.attr({
+            x: size.width / 2,
+            y: size.height / 2,
+            scale: scale
+        });
+        this.addChild(cardSprite, 1);
+
+        var item = new cc.MenuItemImage(
+            res.CardClose_N_png, res.CardClose_S_png, this._onOK, this);
+        item.attr({
+            x: 948 * scale,
+            y: size.height - 127 * scale,
+            scale: scale,
+            anchorX: 0.5,
+            anchorY: 0.5
+        });
+        this.cardClose = new cc.Menu([item]);
+        this.cardClose.x = 0;
+        this.cardClose.y = 0;
+        this.addChild(this.cardClose, 1);
+    },
+
+    _onOK: function() {
+        this.hidden();
     }
 });
+
+var UseCardLayer = ModalLayer.extend({
+    ctor: function(playerid) {
+        this._super();
+        this.playerid = playerid;
+
+        var size = cc.winSize;
+        var cardBgSprite = new cc.Sprite(res.CardBg_png);
+        cardBgSprite.attr({
+            x: size.width / 2,
+            y: size.height / 2,
+            scale: scale
+        });
+        this.addChild(cardBgSprite, 1);
+
+        var menu = new cc.Menu([]);
+        menu.x = 0;
+        menu.y = 0;
+
+        var item = new cc.MenuItemImage(
+            res.CardClose_N_png, res.CardClose_S_png, this._onOK, this);
+        item.attr({
+            x: 948 * scale,
+            y: size.height - 127 * scale,
+            scale: scale,
+            anchorX: 0.5,
+            anchorY: 0.5
+        });
+        menu.addChild(item);
+
+        var item = new cc.MenuItemImage(
+            res.CardToSelf_N_png, res.CardToSelf_S_png, this._useToSelf, this);
+        item.attr({
+            x: 820 * scale,
+            y: size.height - 640 * scale,
+            scale: scale,
+            anchorX: 0.5,
+            anchorY: 0.5
+        });
+        menu.addChild(item);
+ 
+        var item = new cc.MenuItemImage(
+            res.CardToOther_N_png, res.CardToOther_S_png, this._useToOther, this);
+        item.attr({
+            x: 630 * scale,
+            y: size.height - 640 * scale,
+            scale: scale,
+            anchorX: 0.5,
+            anchorY: 0.5
+        });
+        menu.addChild(item);
+ 
+        this.addChild(menu, 2);
+    },
+
+    _onOK: function() {
+        this.hidden();
+    },
+    _useToSelf: function() {
+        this.hidden();
+    },
+    _useToOther: function() {
+        this.hidden();
+    }
+});
+
 
 var RandomLayer = ModalLayer.extend({
     random_count_max: 10,
@@ -226,7 +316,7 @@ var RandomLayer = ModalLayer.extend({
         this._super();
         this.random_cout = 0;
         this.removeChild(this.randomYes);
-        this.schedule(this.doRamdom, 0.5, this.random_count_max);
+        this.schedule(this.doRamdom, 0.5, this.random_count_max - 1);
     },
 
     doRamdom: function() {
@@ -265,7 +355,8 @@ var MainScene = cc.Scene.extend({
     onEnter:function () {
         this._super();
         this.addChild(new MainLayer(), 0, LAYER_TAG_MAIN);
-        this.addChild(new CardLayer(), 0, LAYER_TAG_CARD);
+        this.addChild(new GetCardLayer(), 0, LAYER_TAG_GET_CARD);
+        this.addChild(new UseCardLayer(), 0, LAYER_TAG_USE_CARD);
         this.addChild(new RandomLayer(), 0, LAYER_TAG_RANDOM);
     }
 });

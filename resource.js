@@ -30,5 +30,15 @@ var res = {
     RandomBox1_png: "res/random/2.png",
     RandomBox2_png: "res/random/6.png",
     RandomYes_N_png: "res/random/yes_N.png",
-    RandomYes_S_png: "res/random/yes_S.png"
+    RandomYes_S_png: "res/random/yes_S.png",
+
+    CardGet_png: "res/card/card_get.png",
+    CardBg_png: "res/card/card_bg.png",
+    CardToSelf_N_png: "res/card/card_to_self_N.png",
+    CardToSelf_S_png: "res/card/card_to_self_S.png",
+    CardToOther_N_png: "res/card/card_to_other_N.png",
+    CardToOther_S_png: "res/card/card_to_other_S.png",
+    CardClose_N_png: "res/card/close_N.png",
+    CardClose_S_png: "res/card/close_S.png",
+    CardRule_1_png: "res/card/card_rule_1.png"
 };
