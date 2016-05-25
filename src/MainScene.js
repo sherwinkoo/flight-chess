@@ -5,6 +5,9 @@ var LAYER_TAG_RANDOM = 1004;
 
 var MainLayer = cc.Layer.extend({
 
+    players: [null, ],
+    current_player_index: 1,
+
     ctor:function () {
         this._super();
 
@@ -50,6 +53,21 @@ var MainLayer = cc.Layer.extend({
             {x: 1290, y:215}, res.Player2_N_png, res.Player2_title_png,
             function() {this.onPlayerUserCard(2)},
             function() {this.onPlayerRandom(2)});
+
+        this.initPlayers();
+
+        this.move_listener = cc.eventManager.addListener({
+            event: cc.EventListener.CUSTOM,
+            eventName: "move_event",
+            callback: function(event){
+                var steps = parseInt(event.getUserData());
+                cc.log(this);
+                var node = event.getCurrentTarget();
+                node.notifyPlayerMove(steps);
+            }
+        }, this);
+        cc.log(this.move_listener);
+
         return true;
     },
 
@@ -114,6 +132,90 @@ var MainLayer = cc.Layer.extend({
         this.addChild(menu, 2);
     },
 
+    initPlayers: function() {
+        var size = cc.winSize;
+        var p = null;
+        var sprite = null;
+
+        for(var i = 0; i < 2; i++) {
+            p = new Player();
+            p.init();
+
+            cc.log(p);
+            sprite = new cc.Sprite(p.stoppedSite_png)
+            sprite.attr({
+                x: p.pos.pos.x * scale,
+                y: size.height - p.pos.pos.y * scale,
+                scale: scale,
+            });
+            this.addChild(sprite);
+            this.players.push(p);
+        }
+    },
+
+    notifyPlayerMove: function(steps) {
+        size = cc.winSize;
+
+        // 确定玩家可以移动到的所有站点
+        var p = this.players[this.current_player_index];
+        this.targets = get_target_stations(p.pos, steps);
+        cc.log(this.targets);
+        this.map_menu = new cc.Menu([]);
+        this.map_menu.attr({x: 0, y: 0});
+        for (var i = 0; i < this.targets.length; i++) {
+            var path = this.targets[i];
+            var dest = path[path.length - 1];
+            cc.log(dest);
+            var item = new cc.MenuItemImage(
+                res.SiteMove_png, res.SiteMove_png,
+                function() {this.onPlayerMove(path);},
+                this);
+            item.attr({
+                x: dest.pos.x * scale,
+                y: size.height - dest.pos.y * scale,
+                scale: scale,
+                anchorX: 0.5,
+                anchorY: 0.5
+            });
+            cc.log(item);
+            this.map_menu.addChild(item);
+        }
+        this.addChild(this.map_menu, 1);
+    },
+
+    // path: 玩家移动时要路过的站点
+    onPlayerMove: function(path) {
+        var size = cc.winSize;
+        var p = this.players[this.current_player_index];
+        path = [p.pos].concat(path);
+        cc.log(path);
+        p.pos = path[path.length - 1];
+        for (var i = 0; i < path.length; i++) {
+            var pos = path[i].pos;
+            if (i == path.length - 1) {
+                sprite = new cc.Sprite(p.stoppedSite_png);
+            } else {
+                sprite = new cc.Sprite(p.passedSite_png);
+            }
+            sprite.attr({
+                x: pos.x * scale,
+                y: size.height - pos.y * scale,
+                scale: scale,
+            });
+            this.addChild(sprite);
+        }
+        this.removeChild(this.map_menu);
+        this.map_menu = null;
+
+        this.nextPlayer();
+    },
+
+    nextPlayer: function() {
+        if (this.current_player_index == 1)
+            this.current_player_index = 2;
+        else
+            this.current_player_index = 1;
+    },
     onPlayerUserCard: function(playerid) {
         cc.log('Player: ' + playerid + ' UserCard');
         layer = this.parent.getChildByTag(LAYER_TAG_USE_CARD);
@@ -121,6 +223,9 @@ var MainLayer = cc.Layer.extend({
     },
     onPlayerRandom: function(playerid) {
         cc.log('Player: ' + playerid + ' Random');
+        if (playerid != this.current_player_index)
+            return
+
         layer = this.parent.getChildByTag(LAYER_TAG_RANDOM);
         layer.popup();
     }
@@ -219,6 +324,7 @@ var GetCardLayer = ModalLayer.extend({
 });
 
 var UseCardLayer = ModalLayer.extend({
+
     ctor: function(playerid) {
         this._super();
         this.playerid = playerid;
@@ -285,10 +391,13 @@ var UseCardLayer = ModalLayer.extend({
 
 
 var RandomLayer = ModalLayer.extend({
-    random_count_max: 10,
+    random_count_max: 1,
     random_count: 0,
     randomSprite: null,
     randomYes: null,
+    box_pngs: [res.RandomBox1_png, res.RandomBox2_png, res.RandomBox3_png,
+        res.RandomBox4_png, res.RandomBox5_png, res.RandomBox6_png
+    ],
 
     ctor: function(playerid) {
         this._super();
@@ -320,17 +429,21 @@ var RandomLayer = ModalLayer.extend({
     },
 
     doRamdom: function() {
-        cc.log("doRamdom");
+        this.steps = 0;  // 玩家走的步数
+        var number = Math.ceil(Math.random() * 6);
+        if (number < 3) {
+            this.steps = 1;
+        } else if (number < 5) {
+            this.steps = 2;
+        } else {
+            this.steps = 3;
+        }
 
         var size = cc.winSize;
         if (this.randomSprite) {
             this.removeChild(this.randomSprite);
         }
-        if (this.random_cout % 2 == 0) {
-            this.randomSprite = new cc.Sprite(res.RandomBox1_png);
-        } else {
-            this.randomSprite = new cc.Sprite(res.RandomBox2_png);
-        }
+        this.randomSprite = new cc.Sprite(this.box_pngs[number]);
         this.randomSprite.attr({
             x: size.width / 2,
             y: size.height / 2,
@@ -342,12 +455,17 @@ var RandomLayer = ModalLayer.extend({
         if(this.random_cout == this.random_count_max) {
             // 摇骰子结束，显示确定按钮，并通知玩家
             this.addChild(this.randomYes, 1);
+            cc.log("doRamdom: " + this.steps);
+
         }
     },
 
     _onOK: function() {
-        cc.log("onOK");
         this.hidden();
+        main_layer = this.parent.getChildByTag(LAYER_TAG_MAIN);
+        var event = new cc.EventCustom("move_event");
+        event.setUserData(this.steps.toString());
+        cc.eventManager.dispatchEvent(event);
     }
 });
 

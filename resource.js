@@ -25,6 +25,7 @@ var res = {
     SiteNo_png: "res/main/site_no.png",
     SitePass_png: "res/main/site_pass.png",
     SiteStop_png: "res/main/site_stop.png",
+    SiteMove_png: "res/main/site_move.png",
     Shadow_png: "res/shadow.png",
 
     RandomBox1_png: "res/random/2.png",

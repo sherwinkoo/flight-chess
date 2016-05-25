@@ -6,6 +6,8 @@
     "renderMode"    : 1,
     "jsList"        : [
         "resource.js",
+        "src/sites.js",
+        "src/player.js",
         "src/StartScene.js",
         "src/MainScene.js"
     ]
