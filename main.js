@@ -180,10 +180,12 @@ var lines = [
         stations.xizhimen, stations.dazhongsi, stations.zhichunlu, null,
         stations.shaoyaoju, stations.guangximen, stations.liufnag, stations.dongzhimen],
 ]
-cc.log(lines);
 
 window.onload = function(){
     cc.game.onStart = function(){
+        cc.view.setDesignResolutionSize(1152, 688, cc.ResolutionPolicy.SHOW_ALL);
+        cc.view.resizeWithBrowserSize(true);
+
         cc.LoaderScene.preload([], function () {
             // cc.director.runScene(new StartScene());
             cc.director.runScene(new MainScene());
