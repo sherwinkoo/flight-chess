@@ -398,8 +398,17 @@ var RandomLayer = ModalLayer.extend({
     random_count: 0,
     randomSprite: null,
     randomYes: null,
+    note: null,
     box_pngs: [res.RandomBox1_png, res.RandomBox2_png, res.RandomBox3_png,
         res.RandomBox4_png, res.RandomBox5_png, res.RandomBox6_png
+    ],
+    note_pngs: [
+        res.RandomNote1_png,
+        res.RandomNote2_png,
+        res.RandomNote3_png,
+        res.RandomNote4_png,
+        res.RandomNote5_png,
+        res.RandomNote6_png
     ],
 
     ctor: function(playerid) {
@@ -427,6 +436,7 @@ var RandomLayer = ModalLayer.extend({
     popup: function() {
         this._super();
         this.random_cout = 0;
+        this.removeChild(this.note);
         this.removeChild(this.randomYes);
         this.schedule(this.doRamdom, 0.5, this.random_count_max - 1);
     },
@@ -456,6 +466,14 @@ var RandomLayer = ModalLayer.extend({
         this.random_cout += 1;
 
         if(this.random_cout == this.random_count_max) {
+            this.note = new cc.Sprite(this.note_pngs[number]);
+            this.note.attr({
+                x: size.width / 2,
+                y: size.height * 3 / 4,
+                scale: scale
+            });
+            this.addChild(this.note, 1);
+
             // 摇骰子结束，显示确定按钮，并通知玩家
             this.addChild(this.randomYes, 1);
             cc.log("doRamdom: " + this.steps);

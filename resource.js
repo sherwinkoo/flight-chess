@@ -36,6 +36,12 @@ var res = {
     RandomBox6_png: "res/random/6.png",
     RandomYes_N_png: "res/random/yes_N.png",
     RandomYes_S_png: "res/random/yes_S.png",
+    RandomNote1_png: "res/random/note_1.png",
+    RandomNote2_png: "res/random/note_2.png",
+    RandomNote3_png: "res/random/note_3.png",
+    RandomNote4_png: "res/random/note_4.png",
+    RandomNote5_png: "res/random/note_5.png",
+    RandomNote6_png: "res/random/note_6.png",
 
     CardGet_png: "res/card/card_get.png",
     CardBg_png: "res/card/card_bg.png",
