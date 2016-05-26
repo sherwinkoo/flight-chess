@@ -1,11 +1,13 @@
 var Player = cc.Class.extend({
     passedSite_png: res.SitePass_png,
-    stoppedSite_png: res.SiteStop_png,
+    stoppedSite_png: null,
     pos: null,  // 当前所在站点
     passedSite: [],  // 已经过的站点列表
     cards: [],  // 拥有的卡牌列表
 
     init: function(actionHeadPng, disableHeadPng, pos) {
+        this.stoppedSite_png = actionHeadPng;
+
         // 在10号线上随机玩家的位置
         var line = 10;
         var n = Math.ceil(Math.random() * lines[line].length);
@@ -17,7 +19,7 @@ var Player = cc.Class.extend({
         this.posSprite.attr({
             x: this.pos.pos.x * scale,
             y: size.height - this.pos.pos.y * scale,
-            scale: scale - 0.3,
+            scale: 0.3,
         });
 
         // 行动时的资源

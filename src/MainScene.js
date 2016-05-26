@@ -183,6 +183,9 @@ var MainLayer = cc.Layer.extend({
     onPlayerMove: function(path) {
         var size = cc.winSize;
         var p = this.players[this.current_player_index];
+
+        this.removeChild(p.posSprite);
+
         path = [p.pos].concat(path);
         cc.log(path);
         p.pos = path[path.length - 1];
@@ -190,14 +193,20 @@ var MainLayer = cc.Layer.extend({
             var pos = path[i].pos;
             if (i == path.length - 1) {
                 sprite = new cc.Sprite(p.stoppedSite_png);
+                sprite.attr({
+                    x: pos.x * scale,
+                    y: size.height - pos.y * scale,
+                    scale: 0.3,
+                });
+                p.posSprite = sprite;
             } else {
                 sprite = new cc.Sprite(p.passedSite_png);
+                sprite.attr({
+                    x: pos.x * scale,
+                    y: size.height - pos.y * scale,
+                    scale: scale - 0.3,
+                });
             }
-            sprite.attr({
-                x: pos.x * scale,
-                y: size.height - pos.y * scale,
-                scale: scale - 0.3,
-            });
             this.addChild(sprite);
         }
         this.removeChild(this.map_menu);
