@@ -7,6 +7,8 @@ var MainLayer = cc.Layer.extend({
 
     players: [null, ],
     current_player_index: 0,
+    already_random: false,
+    already_use_card: false,
 
     ctor:function () {
         this._super();
@@ -144,6 +146,8 @@ var MainLayer = cc.Layer.extend({
     notifyPlayerMove: function(steps) {
         size = cc.winSize;
 
+        this.already_random = true;
+
         // 确定玩家可以移动到的所有站点
         var p = this.players[this.current_player_index];
         this.targets = get_target_stations(p.pos, steps);
@@ -215,11 +219,15 @@ var MainLayer = cc.Layer.extend({
                 this.addChild(p.disableHeadSprite, 2);
             }
         }
+        this.already_random = false;
+        this.already_use_card = false;
     },
     onPlayerUserCard: function(playerid) {
         cc.log('Player: ' + playerid + ' UserCard');
         if (playerid != this.current_player_index)
-            return
+            return;
+        if (this.already_use_card)
+            return;
 
         layer = this.parent.getChildByTag(LAYER_TAG_USE_CARD);
         layer.popup();
@@ -227,7 +235,9 @@ var MainLayer = cc.Layer.extend({
     onPlayerRandom: function(playerid) {
         cc.log('Player: ' + playerid + ' Random');
         if (playerid != this.current_player_index)
-            return
+            return;
+        if (this.already_random)
+            return;
 
         layer = this.parent.getChildByTag(LAYER_TAG_RANDOM);
         layer.popup();
