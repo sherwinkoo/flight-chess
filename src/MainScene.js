@@ -6,7 +6,7 @@ var LAYER_TAG_RANDOM = 1004;
 var MainLayer = cc.Layer.extend({
 
     players: [null, ],
-    current_player_index: 1,
+    current_player_index: 0,
 
     ctor:function () {
         this._super();
@@ -44,17 +44,21 @@ var MainLayer = cc.Layer.extend({
 
         // 左边玩家
         this.buildPlayerPanel(
-            {x: 140, y:215}, res.Player1_N_png, res.Player1_title_png,
+            {x: 140, y:215},
+            res.Player1_N_png, res.Player1_D_png,
+            res.Player1_title_png,
             function() {this.onPlayerUserCard(1)},
             function() {this.onPlayerRandom(1)});
 
         // 右边玩家
         this.buildPlayerPanel(
-            {x: 1290, y:215}, res.Player2_N_png, res.Player2_title_png,
+            {x: 1290, y:215},
+            res.Player2_N_png, res.Player2_D_png,
+            res.Player2_title_png,
             function() {this.onPlayerUserCard(2)},
             function() {this.onPlayerRandom(2)});
 
-        this.initPlayers();
+        this.nextPlayer();
 
         this.move_listener = cc.eventManager.addListener({
             event: cc.EventListener.CUSTOM,
@@ -71,18 +75,12 @@ var MainLayer = cc.Layer.extend({
         return true;
     },
 
-    buildPlayerPanel: function(pos, head, title, onUseCard, onRandom) {
+    buildPlayerPanel: function(pos, actionHeadPng, disableHeadPng, title, onUseCard, onRandom) {
         var size = cc.winSize;
         var PlayerBg = new cc.Sprite(res.PlayerBg_png);
         PlayerBg.attr({
             x: pos.x * scale,
             y: size.height - pos.y * scale,
-            scale: scale
-        });
-        var PlayerHead = new cc.Sprite(head);
-        PlayerHead.attr({
-            x: (pos.x - 70) * scale,
-            y: size.height - (pos.y - 125) * scale,
             scale: scale
         });
         var PlayerTitle = new cc.Sprite(title);
@@ -98,9 +96,10 @@ var MainLayer = cc.Layer.extend({
             scale: scale
         });
         this.addChild(PlayerBg, 1);
-        this.addChild(PlayerHead, 2);
         this.addChild(PlayerTitle, 2);
-        this.addChild(PlayerCardNum, 2)
+        this.addChild(PlayerCardNum, 2);
+
+        this.initPlayer(actionHeadPng, disableHeadPng, pos);
 
         var menu = new cc.Menu([]);
         menu.x = 0;
@@ -132,25 +131,14 @@ var MainLayer = cc.Layer.extend({
         this.addChild(menu, 2);
     },
 
-    initPlayers: function() {
+    initPlayer: function(actionHeadPng, disableHeadPng, pos) {
         var size = cc.winSize;
-        var p = null;
-        var sprite = null;
 
-        for(var i = 0; i < 2; i++) {
-            p = new Player();
-            p.init();
+        var p = new Player();
+        p.init(actionHeadPng, disableHeadPng, pos);
 
-            cc.log(p);
-            sprite = new cc.Sprite(p.stoppedSite_png)
-            sprite.attr({
-                x: p.pos.pos.x * scale,
-                y: size.height - p.pos.pos.y * scale,
-                scale: scale,
-            });
-            this.addChild(sprite);
-            this.players.push(p);
-        }
+        this.players.push(p);
+        this.addChild(p.posSprite);
     },
 
     notifyPlayerMove: function(steps) {
@@ -166,14 +154,18 @@ var MainLayer = cc.Layer.extend({
             var path = this.targets[i];
             var dest = path[path.length - 1];
             cc.log(dest);
+            callback = function(v) {
+                return function () {this.onPlayerMove(v);};
+            }
+
             var item = new cc.MenuItemImage(
                 res.SiteMove_png, res.SiteMove_png,
-                function() {this.onPlayerMove(path);},
+                callback(path),
                 this);
             item.attr({
                 x: dest.pos.x * scale,
                 y: size.height - dest.pos.y * scale,
-                scale: scale,
+                scale: scale - 0.3,
                 anchorX: 0.5,
                 anchorY: 0.5
             });
@@ -200,7 +192,7 @@ var MainLayer = cc.Layer.extend({
             sprite.attr({
                 x: pos.x * scale,
                 y: size.height - pos.y * scale,
-                scale: scale,
+                scale: scale - 0.3,
             });
             this.addChild(sprite);
         }
@@ -211,13 +203,24 @@ var MainLayer = cc.Layer.extend({
     },
 
     nextPlayer: function() {
-        if (this.current_player_index == 1)
-            this.current_player_index = 2;
-        else
-            this.current_player_index = 1;
+        this.current_player_index = this.current_player_index % (this.players.length - 1) + 1;
+        for (var i = 0; i < this.players.length; i++) {
+            var p = this.players[i];
+            if (!p) continue;
+            if (i == this.current_player_index) {
+                this.removeChild(p.disableHeadSprite);
+                this.addChild(p.actionHeadSprite, 2);
+            } else {
+                this.removeChild(p.actionHeadSprite);
+                this.addChild(p.disableHeadSprite, 2);
+            }
+        }
     },
     onPlayerUserCard: function(playerid) {
         cc.log('Player: ' + playerid + ' UserCard');
+        if (playerid != this.current_player_index)
+            return
+
         layer = this.parent.getChildByTag(LAYER_TAG_USE_CARD);
         layer.popup();
     },

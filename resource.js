@@ -28,8 +28,12 @@ var res = {
     SiteMove_png: "res/main/site_move.png",
     Shadow_png: "res/shadow.png",
 
-    RandomBox1_png: "res/random/2.png",
-    RandomBox2_png: "res/random/6.png",
+    RandomBox1_png: "res/random/1.png",
+    RandomBox2_png: "res/random/2.png",
+    RandomBox3_png: "res/random/3.png",
+    RandomBox4_png: "res/random/4.png",
+    RandomBox5_png: "res/random/5.png",
+    RandomBox6_png: "res/random/6.png",
     RandomYes_N_png: "res/random/yes_N.png",
     RandomYes_S_png: "res/random/yes_S.png",
 

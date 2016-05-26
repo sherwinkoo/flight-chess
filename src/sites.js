@@ -204,10 +204,13 @@ function get_target_stations(station, steps) {
         cc.log(station.name + " is " + n + "station in line " + station.lines[i]);
         // 倒走路线
         var back = [];
-        for (var j = n - 1; j >= n - steps; j-- ) {
+        var end = n - steps;
+        if (end < 0) end = end - 1;
+        for (var j = n - 1; j >= end; j-- ) {
             var x = null;
             if (j < 0) {
                 if (is_loop(line)) {
+                    if (j == -1) continue;
                     x = line[line.length + j];
                 }
             } else {
@@ -223,10 +226,13 @@ function get_target_stations(station, steps) {
 
         // 正走路线
         var front = [];
-        for (var k = n + 1; k <= n + steps; k++) {
+        end = n + steps;
+        if (end > line.length - 1) end = end + 1;
+        for (var k = n + 1; k <= end; k++) {
             var x = null;
             if (k >= line.length) {
                 if (is_loop(line)) {
+                    if (k == line.length) continue;
                     x = line[k - line.length];
                 }
             } else {
