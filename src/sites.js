@@ -193,6 +193,14 @@ function is_loop(line) {
 
 }
 
+function on_line(station, n) {
+    for (var i = 0; i < station.lines.length; i++) {
+        if (station.lines[i] == n)
+            return true;
+    }
+    return false;
+}
+
 function get_target_stations(station, steps) {
     var targets = [];
 
@@ -272,4 +280,15 @@ function get_station_card(station) {
         }
     }
     return null;
+}
+
+function get_line_by_station(from, to) {
+    for(var i = 0; i < from.lines.length; i++){
+        for(var j = 0; j < to.lines.length; j++) {
+            if (from.lines[i] == to.lines[j]) {
+                return from.lines[i];
+            }
+        }
+    }
+    return -1;
 }

@@ -43,6 +43,7 @@ var CleanPlayerCard = cc.Class.extend({
 
 var Buff = cc.Class.extend({
     ctor: function(player, card) {
+        this.target = player;
         this.card = card;
 
         var size = cc.winSize;

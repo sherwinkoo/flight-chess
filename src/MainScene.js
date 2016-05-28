@@ -150,7 +150,7 @@ var MainLayer = cc.Layer.extend({
 
         var p = new Player();
         p.init(actionHeadPng, disableHeadPng, pos);
-        // p.addCard(new DiDiCard());
+        p.addCard(new DoubleCard());
 
         this.players.push(p);
         this.addChild(p.posSprite);
@@ -166,19 +166,21 @@ var MainLayer = cc.Layer.extend({
 
         // 1. 检查双倍卡
         var buff = p.getBuff();
-        if (buff && buff.type == CardType.DOUBE) {
+        if (buff && buff.card.type == CardType.DOUBE) {
             steps = steps * 2;
         }
 
         // 确定玩家可以移动到的所有站点
         this.targets = get_target_stations(p.pos, steps);
-        cc.log(this.targets);
         this.map_menu = new cc.Menu([]);
         this.map_menu.attr({x: 0, y: 0});
+
         for (var i = 0; i < this.targets.length; i++) {
             var path = this.targets[i];
             var dest = path[path.length - 1];
-            cc.log(dest);
+
+            if (this.isPathForbidden(p.pos, dest)) continue;
+
             callback = function(v) {
                 return function () {this.onClickMove(v);};
             }
@@ -194,7 +196,6 @@ var MainLayer = cc.Layer.extend({
                 anchorX: 0.5,
                 anchorY: 0.5
             });
-            cc.log(item);
             this.map_menu.addChild(item);
         }
         this.addChild(this.map_menu, 1);
@@ -209,6 +210,9 @@ var MainLayer = cc.Layer.extend({
             this.already_random = true;
         } else if (card.type == CardType.STOP_LINE) {
             this.stopLine(card.line);
+            if (this.noWay(buff.target)) {
+                this.nextPlayer();
+            }
         }
     },
     cleanBuff: function(buff) {
@@ -220,21 +224,20 @@ var MainLayer = cc.Layer.extend({
     },
 
     useCardToPlayer: function(playerid, card) {
-        var p = this.players[playerid];
-        var buff = p.addBuff(card);
+        this.already_use_card = true;
+
+        var currPlayer = this.players[this.getCurrentPlayerId()];
+        currPlayer.removeCard(card);
 
         // 玩家BUFF特效
+        var p = this.players[playerid];
+        var buff = p.addBuff(card);
         this.addChild(buff.sprite, 1);
 
         // 对自己使用,需要立刻生效
         if (playerid == this.getCurrentPlayerId()) {
             this.applyBuff(buff);
         }
-
-        var currPlayer = this.players[this.getCurrentPlayerId()];
-        currPlayer.removeCard(card);
-
-        this.already_use_card = true;
     },
 
     // path: 玩家移动时要路过的站点
@@ -287,15 +290,15 @@ var MainLayer = cc.Layer.extend({
         this.removeChild(player.disableHeadSprite);
         this.addChild(player.actionHeadSprite, 2);
 
-        // 2. 被施加的卡牌buff
+        // 2. 数据状态
+        this.already_random = false;
+        this.already_use_card = false;
+
+        // 3. 被施加的卡牌buff
         var buff = player.getBuff();
         if (buff) {
             this.applyBuff(buff);
         }
-
-        // 3. 数据状态
-        this.already_random = false;
-        this.already_use_card = false;
     },
     afterMove: function(player) {
         var card = get_station_card(player.pos);
@@ -347,15 +350,35 @@ var MainLayer = cc.Layer.extend({
                 y: size.height - line[i].pos.y * scale,
                 scale: scale - 0.3
             });
-            this.stopped_lines_sprites.push(sprite);
+            this.stopped_lines_sprites[n].push(sprite);
             this.addChild(sprite, 1);
         }
     },
     resumeLine: function(n) {
-        for(var i = 0; i < this.stopped_lines_sprites.length; i++) {
-            this.removeChild(this.stopped_lines_sprites[i]);
+        for(var i = 0; i < this.stopped_lines_sprites[n].length; i++) {
+            this.removeChild(this.stopped_lines_sprites[n][i]);
         }
         this.stopped_lines_sprites[n] = [];
+    },
+    isPathForbidden: function (from, to) {
+        var n = get_line_by_station(from, to);
+        return this.isLineForbidden(n);
+    },
+    isLineForbidden: function(n) {
+        if(!this.stopped_lines_sprites[n])  // null or undefined
+            return false;
+        if(this.stopped_lines_sprites[n].length == 0)
+            return false;
+        return true;
+    },
+    noWay: function(player) {
+        var station = player.pos;
+
+        for(var i = 0; i < station.lines.length; i++) {
+            if (!this.isLineForbidden(station.lines[i]))
+                return false;
+        }
+        return true;
     },
 
     onClickUseCard: function(playerid) {
