@@ -6,9 +6,10 @@ var LAYER_TAG_RANDOM = 1004;
 var MainLayer = cc.Layer.extend({
 
     players: [null, ],
-    current_player_index: 0,
+    current_player_index: 2,
     already_random: false,
     already_use_card: false,
+    stopped_lines_sprites: [],
 
     ctor:function () {
         this._super();
@@ -49,32 +50,43 @@ var MainLayer = cc.Layer.extend({
             {x: 140, y:215},
             res.Player1_N_png, res.Player1_D_png,
             res.Player1_title_png,
-            function() {this.onPlayerUserCard(1)},
-            function() {this.onPlayerRandom(1)});
+            function() {this.onClickUseCard(1)},
+            function() {this.onClickRandom(1)});
 
         // 右边玩家
         this.buildPlayerPanel(
             {x: 1290, y:215},
             res.Player2_N_png, res.Player2_D_png,
             res.Player2_title_png,
-            function() {this.onPlayerUserCard(2)},
-            function() {this.onPlayerRandom(2)});
+            function() {this.onClickUseCard(2)},
+            function() {this.onClickRandom(2)});
 
         this.nextPlayer();
 
+        this.initEventListeners();
+
+        return true;
+    },
+
+    initEventListeners: function() {
         this.move_listener = cc.eventManager.addListener({
             event: cc.EventListener.CUSTOM,
             eventName: "move_event",
             callback: function(event){
-                var steps = parseInt(event.getUserData());
-                cc.log(this);
+                var steps = event.getUserData();
                 var node = event.getCurrentTarget();
                 node.notifyPlayerMove(steps);
             }
         }, this);
-        cc.log(this.move_listener);
-
-        return true;
+        this.use_card_listener = cc.eventManager.addListener({
+            event: cc.EventListener.CUSTOM,
+            eventName: "use_card_event",
+            callback: function(event){
+                var data = event.getUserData();
+                var node = event.getCurrentTarget();
+                node.useCardToPlayer(data.target, data.card);
+            }
+        }, this);
     },
 
     buildPlayerPanel: function(pos, actionHeadPng, disableHeadPng, title, onUseCard, onRandom) {
@@ -138,6 +150,7 @@ var MainLayer = cc.Layer.extend({
 
         var p = new Player();
         p.init(actionHeadPng, disableHeadPng, pos);
+        p.addCard(new StopLineCard(2));
 
         this.players.push(p);
         this.addChild(p.posSprite);
@@ -148,8 +161,15 @@ var MainLayer = cc.Layer.extend({
 
         this.already_random = true;
 
-        // 确定玩家可以移动到的所有站点
         var p = this.players[this.current_player_index];
+
+        // 1. 检查双倍卡
+        var buff = p.getBuff();
+        if (buff && buff.type == CardType.DOUBE) {
+            steps = steps * 2;
+        }
+
+        // 确定玩家可以移动到的所有站点
         this.targets = get_target_stations(p.pos, steps);
         cc.log(this.targets);
         this.map_menu = new cc.Menu([]);
@@ -177,6 +197,39 @@ var MainLayer = cc.Layer.extend({
             this.map_menu.addChild(item);
         }
         this.addChild(this.map_menu, 1);
+    },
+
+    applyBuff: function(buff) {
+        var card = buff.card;
+
+        // 玩家对自己使用(滴滴卡，停线卡，雾霾卡，出霾卡)
+        if (card.type == CardType.DIDI) {
+            this.notifyPlayerMove(3);
+            this.already_random = true;
+        } else if (card.type == CardType.STOP_LINE) {
+            this.stopLine(card.line);
+        }
+    },
+    cleanBuff: function(buff) {
+        var card = buff.card;
+
+        if (card.type == CardType.STOP_LINE) {
+            this.resumeLine(buff.card.line);
+        }
+    },
+
+    useCardToPlayer: function(playerid, card) {
+        var p = this.players[playerid];
+        var buff = p.addBuff(card);
+
+        // 玩家BUFF特效
+        this.addChild(buff.sprite, 1);
+
+        if (playerid == this.getCurrentPlayerId()) {
+            this.applyBuff(buff);
+        }
+
+        this.already_use_card = true;
     },
 
     // path: 玩家移动时要路过的站点
@@ -215,33 +268,93 @@ var MainLayer = cc.Layer.extend({
         this.nextPlayer();
     },
 
-    nextPlayer: function() {
-        this.current_player_index = this.current_player_index % (this.players.length - 1) + 1;
-        for (var i = 0; i < this.players.length; i++) {
-            var p = this.players[i];
-            if (!p) continue;
-            if (i == this.current_player_index) {
-                this.removeChild(p.disableHeadSprite);
-                this.addChild(p.actionHeadSprite, 2);
-            } else {
-                this.removeChild(p.actionHeadSprite);
-                this.addChild(p.disableHeadSprite, 2);
-            }
+    getCurrentPlayerId: function() {
+        return this.current_player_index;
+    },
+    getOtherPlayerId: function() {
+        return this.current_player_index % (this.players.length - 1) + 1;
+    },
+
+    beforeAction: function(player) {
+        // 1. 修改玩家头像状态
+        this.removeChild(player.disableHeadSprite);
+        this.addChild(player.actionHeadSprite, 2);
+
+        // 2. 被施加的卡牌buff
+        var buff = player.getBuff();
+        if (buff) {
+            this.applyBuff(buff);
         }
+
+        // 3. 数据状态
         this.already_random = false;
         this.already_use_card = false;
     },
-    onPlayerUserCard: function(playerid) {
+    onActionFinished: function(player) {
+        // 1. 头像
+        this.removeChild(player.actionHeadSprite);
+        this.addChild(player.disableHeadSprite, 2);
+
+        // 2. 卡牌buff
+        var buff = player.cleanBuff();
+        if (buff) {
+            this.cleanBuff(buff);
+            this.removeChild(buff.sprite);
+        }
+
+        // 3. 数据状态
+    },
+
+    nextPlayer: function() {
+        var currPlayer = this.players[this.getCurrentPlayerId()];
+        if (currPlayer) {
+            this.onActionFinished(currPlayer);
+        }
+
+        this.current_player_index = this.getOtherPlayerId();
+
+        var otherPlayer = this.players[this.getCurrentPlayerId()];
+        this.beforeAction(otherPlayer);
+    },
+
+    stopLine: function(n) {
+        this.stopped_lines_sprites[n] = [];
+
+        var size = cc.winSize;
+        var line = lines[n];
+        for(var i = 0; i < line.length; i++) {
+            var sprite = new cc.Sprite('res/main/site_off.png');
+            sprite.attr({
+                x: line[i].pos.x * scale,
+                y: size.height - line[i].pos.y * scale,
+                scale: scale - 0.3
+            });
+            this.stopped_lines_sprites.push(sprite);
+            this.addChild(sprite, 1);
+        }
+    },
+    resumeLine: function(n) {
+        for(var i = 0; i < this.stopped_lines_sprites.length; i++) {
+            this.removeChild(this.stopped_lines_sprites[i]);
+        }
+        this.stopped_lines_sprites[n] = [];
+    },
+
+    onClickUseCard: function(playerid) {
         cc.log('Player: ' + playerid + ' UserCard');
         if (playerid != this.current_player_index)
             return;
-        if (this.already_use_card)
+        if (this.already_use_card || this.already_random)
             return;
 
+        var p = this.players[this.getCurrentPlayerId()];
+        var card = p.useCard();
+        if (!card) return;
+
         layer = this.parent.getChildByTag(LAYER_TAG_USE_CARD);
-        layer.popup();
+        layer.popup(card);
     },
-    onPlayerRandom: function(playerid) {
+    onClickRandom: function(playerid) {
         cc.log('Player: ' + playerid + ' Random');
         if (playerid != this.current_player_index)
             return;
@@ -346,19 +459,13 @@ var GetCardLayer = ModalLayer.extend({
 });
 
 var UseCardLayer = ModalLayer.extend({
+    cardNode: null,
 
     ctor: function(playerid) {
         this._super();
         this.playerid = playerid;
 
         var size = cc.winSize;
-        var cardBgSprite = new cc.Sprite(res.CardBg_png);
-        cardBgSprite.attr({
-            x: size.width / 2,
-            y: size.height / 2,
-            scale: scale
-        });
-        this.addChild(cardBgSprite, 1);
 
         var menu = new cc.Menu([]);
         menu.x = 0;
@@ -400,14 +507,47 @@ var UseCardLayer = ModalLayer.extend({
         this.addChild(menu, 2);
     },
 
+    popup: function(card) {
+        this.card = card;
+
+        var size = cc.winSize;
+
+        var cardBgSprite = new cc.Sprite(card.pic);
+        cardBgSprite.attr({
+            x: size.width / 2,
+            y: size.height / 2,
+            scale: scale
+        });
+        this.addChild(cardBgSprite, 1);
+
+        this._super();
+    },
+
     _onOK: function() {
         this.hidden();
     },
+
     _useToSelf: function() {
         this.hidden();
+
+        main_layer = this.parent.getChildByTag(LAYER_TAG_MAIN);
+        var event = new cc.EventCustom("use_card_event");
+        event.setUserData({
+            card: this.card,
+            target:main_layer.getCurrentPlayerId()
+        });
+        cc.eventManager.dispatchEvent(event);
     },
     _useToOther: function() {
         this.hidden();
+
+        main_layer = this.parent.getChildByTag(LAYER_TAG_MAIN);
+        var event = new cc.EventCustom("use_card_event");
+        event.setUserData({
+            card: this.card,
+            target:main_layer.getOtherPlayerId()
+        });
+        cc.eventManager.dispatchEvent(event);
     }
 });
 
@@ -462,7 +602,7 @@ var RandomLayer = ModalLayer.extend({
 
     doRamdom: function() {
         this.steps = 0;  // 玩家走的步数
-        var number = Math.ceil(Math.random() * 6);
+        var number = Math.floor(Math.random() * 6);
         if (number < 3) {
             this.steps = 1;
         } else if (number < 5) {
@@ -504,7 +644,7 @@ var RandomLayer = ModalLayer.extend({
         this.hidden();
         main_layer = this.parent.getChildByTag(LAYER_TAG_MAIN);
         var event = new cc.EventCustom("move_event");
-        event.setUserData(this.steps.toString());
+        event.setUserData(this.steps);
         cc.eventManager.dispatchEvent(event);
     }
 });

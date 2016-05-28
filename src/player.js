@@ -5,12 +5,16 @@ var Player = cc.Class.extend({
     passedSite: [],  // 已经过的站点列表
     cards: [],  // 拥有的卡牌列表
 
+    buff: null,  // 卡牌效果
+    buffPos: null, // 卡牌效果的显示位置
+
     init: function(actionHeadPng, disableHeadPng, pos) {
         this.stoppedSite_png = actionHeadPng;
+        this.buffPos = pos;
 
         // 在10号线上随机玩家的位置
         var line = 10;
-        var n = Math.ceil(Math.random() * lines[line].length);
+        var n = Math.floor(Math.random() * lines[line].length);
         // var n = 34;
         this.pos = lines[line][n];
 
@@ -37,5 +41,31 @@ var Player = cc.Class.extend({
             y: size.height - (pos.y - 125) * scale,
             scale: scale
         });
+    },
+
+    addCard: function(card) {
+        this.cards.push(card);
+    },
+    useCard: function() {
+        if (this.cards.length == 0)
+            return null;
+
+        var n = Math.floor(Math.random() * this.cards.length);
+        var card = this.cards[n];
+        this.cards.splice(n, n);
+        return card;
+    },
+
+    addBuff: function(card) {
+        this.buff = new Buff(this, card);
+        return this.buff;
+    },
+    getBuff: function() {
+        return this.buff;
+    },
+    cleanBuff: function() {
+        var buff = this.buff;
+        this.buff = null;
+        return buff;
     }
 });

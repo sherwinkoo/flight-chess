@@ -51,5 +51,5 @@ var res = {
     CardToOther_S_png: "res/card/card_to_other_S.png",
     CardClose_N_png: "res/card/close_N.png",
     CardClose_S_png: "res/card/close_S.png",
-    CardRule_1_png: "res/card/card_rule_1.png"
+    CardRule_1_png: "res/card/card_rule_1.png",
 };

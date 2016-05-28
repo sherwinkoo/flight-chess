@@ -7,6 +7,7 @@
     "jsList"        : [
         "resource.js",
         "src/sites.js",
+        "src/card.js",
         "src/player.js",
         "src/StartScene.js",
         "src/MainScene.js"
