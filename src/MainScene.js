@@ -150,10 +150,11 @@ var MainLayer = cc.Layer.extend({
 
         var p = new Player();
         p.init(actionHeadPng, disableHeadPng, pos);
-        p.addCard(new StopLineCard(2));
+        // p.addCard(new DiDiCard());
 
         this.players.push(p);
         this.addChild(p.posSprite);
+        this.addChild(p.cardNumberSprite, 4);
     },
 
     notifyPlayerMove: function(steps) {
@@ -179,7 +180,7 @@ var MainLayer = cc.Layer.extend({
             var dest = path[path.length - 1];
             cc.log(dest);
             callback = function(v) {
-                return function () {this.onPlayerMove(v);};
+                return function () {this.onClickMove(v);};
             }
 
             var item = new cc.MenuItemImage(
@@ -225,15 +226,19 @@ var MainLayer = cc.Layer.extend({
         // 玩家BUFF特效
         this.addChild(buff.sprite, 1);
 
+        // 对自己使用,需要立刻生效
         if (playerid == this.getCurrentPlayerId()) {
             this.applyBuff(buff);
         }
+
+        var currPlayer = this.players[this.getCurrentPlayerId()];
+        currPlayer.removeCard(card);
 
         this.already_use_card = true;
     },
 
     // path: 玩家移动时要路过的站点
-    onPlayerMove: function(path) {
+    onClickMove: function(path) {
         var size = cc.winSize;
         var p = this.players[this.current_player_index];
 
@@ -265,6 +270,8 @@ var MainLayer = cc.Layer.extend({
         this.removeChild(this.map_menu);
         this.map_menu = null;
 
+        this.afterMove(p);
+
         this.nextPlayer();
     },
 
@@ -289,6 +296,17 @@ var MainLayer = cc.Layer.extend({
         // 3. 数据状态
         this.already_random = false;
         this.already_use_card = false;
+    },
+    afterMove: function(player) {
+        var card = get_station_card(player.pos);
+        // var card = null;
+        if(card) {
+            player.addCard(card);
+
+            // 弹出获得卡牌的提示
+            var layer = this.parent.getChildByTag(LAYER_TAG_GET_CARD);
+            layer.popup();
+        }
     },
     onActionFinished: function(player) {
         // 1. 头像
@@ -348,7 +366,7 @@ var MainLayer = cc.Layer.extend({
             return;
 
         var p = this.players[this.getCurrentPlayerId()];
-        var card = p.useCard();
+        var card = p.getCard();
         if (!card) return;
 
         layer = this.parent.getChildByTag(LAYER_TAG_USE_CARD);
@@ -589,7 +607,7 @@ var RandomLayer = ModalLayer.extend({
         this.randomYes.y = 0;
         this.addChild(this.randomYes, 1);
  
-        this.doRamdom();
+        this.doRandom();
     },
 
     popup: function() {
@@ -597,12 +615,13 @@ var RandomLayer = ModalLayer.extend({
         this.random_cout = 0;
         this.removeChild(this.note);
         this.removeChild(this.randomYes);
-        this.schedule(this.doRamdom, 0.5, this.random_count_max - 1);
+        this.schedule(this.doRandom, 0.5, this.random_count_max - 1);
     },
 
-    doRamdom: function() {
+    doRandom: function() {
         this.steps = 0;  // 玩家走的步数
-        var number = Math.floor(Math.random() * 6);
+        // var number = Math.floor(Math.random() * 6);
+        var number = 1;
         if (number < 3) {
             this.steps = 1;
         } else if (number < 5) {
@@ -635,7 +654,7 @@ var RandomLayer = ModalLayer.extend({
 
             // 摇骰子结束，显示确定按钮，并通知玩家
             this.addChild(this.randomYes, 1);
-            cc.log("doRamdom: " + this.steps);
+            cc.log("doRandom: " + this.steps);
 
         }
     },

@@ -248,3 +248,28 @@ function get_target_stations(station, steps) {
     }
     return targets;
 }
+
+function get_station_card(station) {
+    var onLine = [2, 4, 6, 10];
+
+    for(var i = 0; i < station.lines.length; i++) {
+        var n = station.lines[i];
+        var index = get_station_index(station, lines[n]);
+
+        // 每隔两站一个卡站
+        cc.log(station, index);
+        if (index % 3 == 2) {
+            var t = Math.floor(Math.random() * 3) + 1;  // 卡牌类型
+            cc.log("CardType: ", t);
+            if(t == CardType.STOP_LINE){
+                var x = Math.floor(Math.random() * onLine.length);
+                return new StopLineCard(onLine[x]);
+            } else if(t == CardType.DIDI) {
+                return new DiDiCard();
+            } else if (t == CardType.DOUBE) {
+                return new DoubleCard();
+            }
+        }
+    }
+    return null;
+}

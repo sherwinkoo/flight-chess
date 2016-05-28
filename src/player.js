@@ -11,6 +11,7 @@ var Player = cc.Class.extend({
     init: function(actionHeadPng, disableHeadPng, pos) {
         this.stoppedSite_png = actionHeadPng;
         this.buffPos = pos;
+        this.cards = [];
 
         // 在10号线上随机玩家的位置
         var line = 10;
@@ -24,6 +25,15 @@ var Player = cc.Class.extend({
             x: this.pos.pos.x * scale,
             y: size.height - this.pos.pos.y * scale,
             scale: 0.3,
+        });
+
+        // 卡牌数
+        this.cardNumberSprite = new cc.LabelTTF(
+            this.cards.length.toString(),
+            'Times New Roman', 20, cc.size(64 * 32), cc.TEXT_ALIGNMENT_CENTER);
+        this.cardNumberSprite.attr({
+            x: (pos.x + 47) * scale,
+            y: size.height - (pos.y - 47) * scale
         });
 
         // 行动时的资源
@@ -44,16 +54,29 @@ var Player = cc.Class.extend({
     },
 
     addCard: function(card) {
+        cc.log(this);
         this.cards.push(card);
+        this._updateCardNumber();
     },
-    useCard: function() {
+    getCard: function() {
         if (this.cards.length == 0)
             return null;
 
         var n = Math.floor(Math.random() * this.cards.length);
-        var card = this.cards[n];
-        this.cards.splice(n, n);
-        return card;
+        return this.cards[n];
+    },
+    removeCard: function(card) {
+        var i = 0;
+        for (i = 0; i < this.cards.length; i++) {
+            if (card == this.cards[i]) {
+                this.cards.splice(i, i + 1);
+                break;
+            }
+        }
+        this._updateCardNumber();
+    },
+    _updateCardNumber: function() {
+        this.cardNumberSprite.setString(this.cards.length.toString());
     },
 
     addBuff: function(card) {
