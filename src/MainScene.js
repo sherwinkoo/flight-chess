@@ -165,9 +165,12 @@ var MainLayer = cc.Layer.extend({
         var p = this.players[this.current_player_index];
 
         // 1. 检查双倍卡
-        var buff = p.getBuff();
-        if (buff && buff.card.type == CardType.DOUBE) {
-            steps = steps * 2;
+        var buffs = p.getBuff();
+        for(var i = 0; i < buffs.length; i++) {
+            var buff = buffs[i];
+            if (buff && buff.card.type == CardType.DOUBE) {
+                steps = steps * 2;
+            }
         }
 
         // 确定玩家可以移动到的所有站点
@@ -209,9 +212,11 @@ var MainLayer = cc.Layer.extend({
             this.notifyPlayerMove(3);
             this.already_random = true;
         } else if (card.type == CardType.STOP_LINE) {
-            this.stopLine(card.line);
-            if (this.noWay(buff.target)) {
-                this.nextPlayer();
+            if(!this.isLineForbidden(card.line)) {
+                this.stopLine(card.line);
+                if (this.noWay(buff.target)) {
+                    this.nextPlayer();
+                }
             }
         }
     },
@@ -295,13 +300,14 @@ var MainLayer = cc.Layer.extend({
         this.already_use_card = false;
 
         // 3. 被施加的卡牌buff
-        var buff = player.getBuff();
-        if (buff) {
-            this.applyBuff(buff);
+        var buffs = player.getBuff();
+        cc.log(buffs);
+        for(var i = 0; i < buffs.length; i++) {
+            this.applyBuff(buffs[i]);
         }
     },
     afterMove: function(player) {
-        if(player.pos == stations.tiananmendong || player.pos == stations.tiananmendong) {
+        if(player.pos == stations.tiananmendong || player.pos == stations.tiananmenxi) {
             var layer = this.parent.getChildByTag(LAYER_TAG_OVER);
             layer.popup(player);
             return;
@@ -323,8 +329,9 @@ var MainLayer = cc.Layer.extend({
         this.addChild(player.disableHeadSprite, 2);
 
         // 2. 卡牌buff
-        var buff = player.cleanBuff();
-        if (buff) {
+        var buffs = player.cleanBuff();
+        for(var i = 0; i < buffs.length; i++) {
+            var buff = buffs[i];
             this.cleanBuff(buff);
             this.removeChild(buff.sprite);
         }

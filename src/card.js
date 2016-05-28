@@ -42,14 +42,14 @@ var CleanPlayerCard = cc.Class.extend({
 });
 
 var Buff = cc.Class.extend({
-    ctor: function(player, card) {
+    ctor: function(player, card, index) {
         this.target = player;
         this.card = card;
 
         var size = cc.winSize;
         this.sprite = new cc.Sprite(card.pic);
         this.sprite.attr({
-            x: (player.buffPos.x - 50)* scale,
+            x: (player.buffPos.x - 50 + 70 * index)* scale,
             y: size.height - (player.buffPos.y + 180) * scale,
             scale: 0.1
         });

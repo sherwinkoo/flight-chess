@@ -6,8 +6,8 @@ window.onload = function(){
         cc.view.resizeWithBrowserSize(true);
 
         cc.LoaderScene.preload([], function () {
-            // cc.director.runScene(new StartScene());
-            cc.director.runScene(new MainScene());
+            cc.director.runScene(new StartScene());
+            // cc.director.runScene(new MainScene());
         }, this);
     };
     cc.game.run("gameCanvas");
