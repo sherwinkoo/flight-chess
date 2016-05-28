@@ -8,7 +8,8 @@ var Player = cc.Class.extend({
     buff: null,  // 卡牌效果
     buffPos: null, // 卡牌效果的显示位置
 
-    init: function(actionHeadPng, disableHeadPng, pos) {
+    ctor: function(playerid, actionHeadPng, disableHeadPng, pos) {
+        this.playerid = playerid;
         this.stoppedSite_png = actionHeadPng;
         this.buffPos = pos;
         this.cards = [];
@@ -49,6 +50,14 @@ var Player = cc.Class.extend({
         this.disableHeadSprite.attr({
             x: (pos.x - 70) * scale,
             y: size.height - (pos.y - 125) * scale,
+            scale: scale
+        });
+
+        // 胜利
+        this.winSprite = new cc.Sprite("res/over/winner_" + playerid + ".png");
+        this.winSprite.attr({
+            x: size.width / 2,
+            y: size.height / 2,
             scale: scale
         });
     },

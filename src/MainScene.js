@@ -2,6 +2,7 @@ var LAYER_TAG_MAIN = 1001;
 var LAYER_TAG_GET_CARD = 1002;
 var LAYER_TAG_USE_CARD = 1003;
 var LAYER_TAG_RANDOM = 1004;
+var LAYER_TAG_OVER = 1005;
 
 var MainLayer = cc.Layer.extend({
 
@@ -148,12 +149,11 @@ var MainLayer = cc.Layer.extend({
     initPlayer: function(actionHeadPng, disableHeadPng, pos) {
         var size = cc.winSize;
 
-        var p = new Player();
-        p.init(actionHeadPng, disableHeadPng, pos);
-        p.addCard(new DoubleCard());
-
+        var pid = this.players.length;
+        var p = new Player(pid, actionHeadPng, disableHeadPng, pos);
         this.players.push(p);
-        this.addChild(p.posSprite);
+
+        this.addChild(p.posSprite, 1);
         this.addChild(p.cardNumberSprite, 4);
     },
 
@@ -301,6 +301,12 @@ var MainLayer = cc.Layer.extend({
         }
     },
     afterMove: function(player) {
+        if(player.pos == stations.tiananmendong || player.pos == stations.tiananmendong) {
+            var layer = this.parent.getChildByTag(LAYER_TAG_OVER);
+            layer.popup(player);
+            return;
+        }
+
         var card = get_station_card(player.pos);
         // var card = null;
         if(card) {
@@ -643,8 +649,8 @@ var RandomLayer = ModalLayer.extend({
 
     doRandom: function() {
         this.steps = 0;  // 玩家走的步数
-        // var number = Math.floor(Math.random() * 6);
-        var number = 1;
+        var number = Math.floor(Math.random() * 6);
+        // var number = 1;
         if (number < 3) {
             this.steps = 1;
         } else if (number < 5) {
@@ -691,6 +697,16 @@ var RandomLayer = ModalLayer.extend({
     }
 });
 
+var OverLayer = ModalLayer.extend({
+    ctor: function() {
+        this._super();
+    },
+    popup: function(player) {
+        this._super();
+        this.addChild(player.winSprite, 1);
+    }
+});
+
 var MainScene = cc.Scene.extend({
     onEnter:function () {
         this._super();
@@ -698,5 +714,6 @@ var MainScene = cc.Scene.extend({
         this.addChild(new GetCardLayer(), 0, LAYER_TAG_GET_CARD);
         this.addChild(new UseCardLayer(), 0, LAYER_TAG_USE_CARD);
         this.addChild(new RandomLayer(), 0, LAYER_TAG_RANDOM);
+        this.addChild(new OverLayer(), 0, LAYER_TAG_OVER);
     }
 });
